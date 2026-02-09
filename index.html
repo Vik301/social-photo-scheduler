@@ -12,4 +12,218 @@
     .dropzone.drag { background:#e8f0ff; border-color:#4a7cff; }
     img.preview { max-height:120px; margin:6px; border-radius:8px; }
     textarea, select, input { width:100%; padding:10px; margin-top:8px; margin-bottom:14px; border-radius:8px; border:1px solid #ccc; }
-    button { padding:8px
+    button { padding:8px 14px; background:black; color:white; border:none; border-radius:8px; cursor:pointer; margin:4px; }
+    .post { border-bottom:1px solid #eee; padding:10px 0; }
+    .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+    .day { background:#fafafa; padding:10px; border-radius:8px; min-height:80px; font-size:12px; }
+    .login { max-width:400px; margin:120px auto; }
+  </style>
+</head>
+<body>
+
+<div id="loginPage" class="login card">
+  <h2>Team Login</h2>
+  <input id="user" placeholder="Username" />
+  <input id="pass" placeholder="Password" type="password" />
+  <button onclick="login()">Login</button>
+  <p id="loginMsg"></p>
+</div>
+
+<div id="app" style="display:none">
+<div class="container">
+
+<div class="card">
+<h2>Schedule Post</h2>
+
+<div id="dropzone" class="dropzone">
+Drag & Drop Photos
+<input type="file" id="fileInput" multiple accept="image/*" />
+<div id="preview"></div>
+</div>
+
+<textarea id="caption" placeholder="Caption..."></textarea>
+<button onclick="aiCaption()">AI Caption</button>
+
+<select id="platform">
+<option>Instagram</option>
+<option>Facebook</option>
+<option>LinkedIn</option>
+<option>TikTok</option>
+</select>
+
+<input type="datetime-local" id="scheduleTime" />
+
+<button onclick="schedulePost()">Schedule</button>
+<button onclick="exportCSV()">Export CSV</button>
+
+<p id="msg"></p>
+</div>
+
+<div class="card">
+<h2>Calendar View</h2>
+<div id="calendar" class="calendar"></div>
+</div>
+
+<div class="card">
+<h2>Scheduled Posts</h2>
+<div id="posts"></div>
+</div>
+
+</div>
+</div>
+
+<script>
+
+// LOGIN (demo team auth)
+function login(){
+  const u=document.getElementById('user').value;
+  const p=document.getElementById('pass').value;
+  if(u==='admin'&&p==='1234'){
+    document.getElementById('loginPage').style.display='none';
+    document.getElementById('app').style.display='block';
+  }else{
+    document.getElementById('loginMsg').innerText='Wrong login';
+  }
+}
+
+// DRAG DROP
+const dz=document.getElementById('dropzone');
+const fi=document.getElementById('fileInput');
+const preview=document.getElementById('preview');
+
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{
+ e.preventDefault();dz.classList.remove('drag');
+ fi.files=e.dataTransfer.files;showPreview();
+});
+fi.addEventListener('change',showPreview);
+
+function showPreview(){
+ preview.innerHTML='';
+ [...fi.files].forEach(f=>{
+  const img=document.createElement('img');
+  img.src=URL.createObjectURL(f);
+  img.className='preview';
+  preview.appendChild(img);
+ });
+}
+
+// AI CAPTION (demo generator)
+function aiCaption(){
+ const captions=[
+  'Elevate your brand with this moment ✨',
+  'Behind the scenes of success 📸',
+  'Creating impact one post at a time 🚀',
+  'Visual storytelling that connects 🎯'
+ ];
+ document.getElementById('caption').value=
+  captions[Math.floor(Math.random()*captions.length)];
+}
+
+// SAVE POST
+function schedulePost(){
+ const caption=document.getElementById('caption').value;
+ const platform=document.getElementById('platform').value;
+ const time=document.getElementById('scheduleTime').value;
+ if(!caption||!time||fi.files.length===0){
+  msg('Complete all fields');return;
+ }
+ const posts=JSON.parse(localStorage.posts||'[]');
+ const images=[...fi.files].map(f=>URL.createObjectURL(f));
+ posts.push({id:Date.now(),caption,platform,time,images,posted:false});
+ localStorage.posts=JSON.stringify(posts);
+ msg('Scheduled ✅');
+ fi.value='';preview.innerHTML='';loadPosts();renderCalendar();
+}
+
+function msg(t){document.getElementById('msg').innerText=t;}
+
+// DELETE / EDIT
+function deletePost(id){
+ let posts=JSON.parse(localStorage.posts||'[]');
+ posts=posts.filter(p=>p.id!==id);
+ localStorage.posts=JSON.stringify(posts);
+ loadPosts();renderCalendar();
+}
+
+function editPost(id){
+ const posts=JSON.parse(localStorage.posts||'[]');
+ const p=posts.find(x=>x.id===id);
+ document.getElementById('caption').value=p.caption;
+ document.getElementById('platform').value=p.platform;
+ document.getElementById('scheduleTime').value=p.time;
+ deletePost(id);
+}
+
+// LOAD POSTS
+function loadPosts(){
+ const posts=JSON.parse(localStorage.posts||'[]');
+ const c=document.getElementById('posts');
+ c.innerHTML='';
+ posts.forEach(p=>{
+  const d=document.createElement('div');
+  d.className='post';
+  d.innerHTML=`
+   <b>${p.platform}</b> — ${p.time}<br/>
+   ${p.caption}<br/>
+   ${p.images.map(i=>`<img src="${i}" height="50"/>`).join('')}
+   <br/>
+   <button onclick="editPost(${p.id})">Edit</button>
+   <button onclick="deletePost(${p.id})">Delete</button>
+  `;
+  c.appendChild(d);
+ });
+}
+
+// CALENDAR
+function renderCalendar(){
+ const cal=document.getElementById('calendar');
+ cal.innerHTML='';
+ const posts=JSON.parse(localStorage.posts||'[]');
+ for(let i=1;i<=30;i++){
+  const day=document.createElement('div');
+  day.className='day';
+  day.innerHTML='<b>'+i+'</b>';
+  posts.forEach(p=>{
+   if(new Date(p.time).getDate()===i){
+    day.innerHTML+='<br/>📌 '+p.platform;
+   }
+  });
+  cal.appendChild(day);
+ }
+}
+
+// AUTO POST SIMULATION
+setInterval(()=>{
+ const posts=JSON.parse(localStorage.posts||'[]');
+ const now=new Date();
+ posts.forEach(p=>{
+  if(!p.posted && new Date(p.time)<=now){
+   p.posted=true;
+   console.log('Auto-posted:',p.caption);
+  }
+ });
+ localStorage.posts=JSON.stringify(posts);
+},60000);
+
+// EXPORT CSV
+function exportCSV(){
+ const posts=JSON.parse(localStorage.posts||'[]');
+ let csv='Platform,Caption,Time\n';
+ posts.forEach(p=>{
+  csv+=`${p.platform},"${p.caption}",${p.time}\n`;
+ });
+ const blob=new Blob([csv]);
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);
+ a.download='scheduled-posts.csv';
+ a.click();
+}
+
+loadPosts();renderCalendar();
+
+</script>
+
+</body>
+</html>
