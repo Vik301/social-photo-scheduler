@@ -16,20 +16,10 @@
     .post { border-bottom:1px solid #eee; padding:10px 0; }
     .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
     .day { background:#fafafa; padding:10px; border-radius:8px; min-height:80px; font-size:12px; }
-    .login { max-width:400px; margin:120px auto; }
   </style>
 </head>
 <body>
 
-<div id="loginPage" class="login card">
-  <h2>Team Login</h2>
-  <input id="user" placeholder="Username" />
-  <input id="pass" placeholder="Password" type="password" />
-  <button onclick="login()">Login</button>
-  <p id="loginMsg"></p>
-</div>
-
-<div id="app" style="display:none">
 <div class="container">
 
 <div class="card">
@@ -70,21 +60,8 @@ Drag & Drop Photos
 </div>
 
 </div>
-</div>
 
 <script>
-
-// LOGIN (demo team auth)
-function login(){
-  const u=document.getElementById('user').value;
-  const p=document.getElementById('pass').value;
-  if(u==='admin'&&p==='1234'){
-    document.getElementById('loginPage').style.display='none';
-    document.getElementById('app').style.display='block';
-  }else{
-    document.getElementById('loginMsg').innerText='Wrong login';
-  }
-}
 
 // DRAG DROP
 const dz=document.getElementById('dropzone');
@@ -109,7 +86,7 @@ function showPreview(){
  });
 }
 
-// AI CAPTION (demo generator)
+// AI CAPTION (demo)
 function aiCaption(){
  const captions=[
   'Elevate your brand with this moment ✨',
