@@ -5,61 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
-    body {
-      font-family: Arial;
+    body{
+      font-family:Arial;
       margin:0;
       padding:20px;
-
-      /* BACKGROUND GRADIENT */
-      background: linear-gradient(135deg,#4a7cff,#7b5cff,#00c6ff);
-      background-size: 300% 300%;
-      animation: bgMove 12s ease infinite;
+      background:linear-gradient(135deg,#4a7cff,#7b5cff,#00c6ff);
+      background-size:300% 300%;
+      animation:bgMove 12s ease infinite;
     }
 
-    @keyframes bgMove {
+    @keyframes bgMove{
       0%{background-position:0% 50%;}
       50%{background-position:100% 50%;}
       100%{background-position:0% 50%;}
     }
 
-    .container {
-      max-width:1100px;
-      margin:auto;
-    }
+    .container{max-width:1100px;margin:auto;}
 
-    /* CARD GRADIENT */
-    .card {
-      background: linear-gradient(180deg,#ffffff,#f3f6ff);
+    .card{
+      background:linear-gradient(180deg,#fff,#f3f6ff);
       padding:20px;
       border-radius:14px;
       box-shadow:0 8px 24px rgba(0,0,0,.12);
       margin-bottom:20px;
-      backdrop-filter: blur(6px);
     }
 
-    /* DROPZONE */
-    .dropzone {
-      border:2px dashed #ccc;
-      padding:20px;
-      text-align:center;
-      border-radius:12px;
-      background: linear-gradient(135deg,#fafafa,#eef3ff);
-      transition:.3s;
-    }
-
-    .dropzone.drag {
-      background: linear-gradient(135deg,#4a7cff,#00c6ff);
-      color:white;
-      border-color:#fff;
-    }
-
-    img.preview {
-      max-height:120px;
-      margin:6px;
-      border-radius:8px;
-    }
-
-    textarea, select, input {
+    textarea,select,input{
       width:100%;
       padding:10px;
       margin-top:8px;
@@ -68,37 +39,38 @@
       border:1px solid #ccc;
     }
 
-    /* GRADIENT BUTTONS */
-    button {
+    button{
       padding:8px 14px;
-      background: linear-gradient(135deg,#4a7cff,#7b5cff);
-      color:white;
+      background:linear-gradient(135deg,#4a7cff,#7b5cff);
+      color:#fff;
       border:none;
       border-radius:8px;
       cursor:pointer;
       margin:4px;
-      transition:.25s;
     }
 
-    button:hover {
-      background: linear-gradient(135deg,#7b5cff,#00c6ff);
-      transform: translateY(-1px);
+    .dropzone{
+      border:2px dashed #ccc;
+      padding:20px;
+      text-align:center;
+      border-radius:12px;
+      background:#fafafa;
     }
 
-    .post {
-      border-bottom:1px solid #eee;
-      padding:10px 0;
+    img.preview{
+      max-height:120px;
+      margin:6px;
+      border-radius:8px;
     }
 
-    /* CALENDAR */
-    .calendar {
+    .calendar{
       display:grid;
       grid-template-columns:repeat(7,1fr);
       gap:6px;
     }
 
-    .day {
-      background: linear-gradient(180deg,#ffffff,#f0f4ff);
+    .day{
+      background:#fff;
       padding:10px;
       border-radius:8px;
       min-height:80px;
@@ -106,30 +78,46 @@
     }
   </style>
 </head>
+
 <body>
 
 <div class="container">
 
+<!-- SCHEDULER -->
 <div class="card">
 <h2>Schedule Post</h2>
 
 <div id="dropzone" class="dropzone">
 Drag & Drop Photos
-<input type="file" id="fileInput" multiple accept="image/*" />
+<input type="file" id="fileInput" multiple accept="image/*"/>
 <div id="preview"></div>
 </div>
 
 <textarea id="caption" placeholder="Caption..."></textarea>
 <button onclick="aiCaption()">AI Caption</button>
 
-<select id="platform">
-<option>Instagram</option>
+<select id="platform" onchange="platformChanged()">
+<option value="">Select Platform</option>
+<option value="Instagram">Instagram</option>
 <option>Facebook</option>
 <option>LinkedIn</option>
 <option>TikTok</option>
 </select>
 
-<input type="datetime-local" id="scheduleTime" />
+<!-- INSTAGRAM CONNECT -->
+<div id="igConnect" style="display:none;">
+<input id="igUser" placeholder="Instagram username (without @)"/>
+
+<a id="igProfileLink" href="#" target="_blank">
+<button type="button">Open Instagram Profile</button>
+</a>
+
+<p style="font-size:12px;color:#666;">
+Instagram scheduling requires API connection
+</p>
+</div>
+
+<input type="datetime-local" id="scheduleTime"/>
 
 <button onclick="schedulePost()">Schedule</button>
 <button onclick="exportCSV()">Export CSV</button>
@@ -137,11 +125,13 @@ Drag & Drop Photos
 <p id="msg"></p>
 </div>
 
+<!-- CALENDAR -->
 <div class="card">
 <h2>Calendar View</h2>
 <div id="calendar" class="calendar"></div>
 </div>
 
+<!-- POSTS -->
 <div class="card">
 <h2>Scheduled Posts</h2>
 <div id="posts"></div>
@@ -156,12 +146,21 @@ const dz=document.getElementById('dropzone');
 const fi=document.getElementById('fileInput');
 const preview=document.getElementById('preview');
 
-dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
-dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
-dz.addEventListener('drop',e=>{
- e.preventDefault();dz.classList.remove('drag');
- fi.files=e.dataTransfer.files;showPreview();
+dz.addEventListener('dragover',e=>{
+ e.preventDefault();dz.classList.add('drag');
 });
+
+dz.addEventListener('dragleave',()=>{
+ dz.classList.remove('drag');
+});
+
+dz.addEventListener('drop',e=>{
+ e.preventDefault();
+ dz.classList.remove('drag');
+ fi.files=e.dataTransfer.files;
+ showPreview();
+});
+
 fi.addEventListener('change',showPreview);
 
 function showPreview(){
@@ -174,7 +173,23 @@ function showPreview(){
  });
 }
 
-// AI CAPTION (demo)
+// PLATFORM CHANGE
+function platformChanged(){
+ const p=document.getElementById('platform').value;
+ document.getElementById('igConnect').style.display =
+  p==="Instagram" ? "block":"none";
+}
+
+// UPDATE IG LINK
+document.addEventListener("input",e=>{
+ if(e.target.id==="igUser"){
+  const user=e.target.value.replace("@","");
+  document.getElementById("igProfileLink").href =
+   "https://instagram.com/"+user;
+ }
+});
+
+// AI CAPTION
 function aiCaption(){
  const captions=[
   'Elevate your brand with this moment ✨',
@@ -182,43 +197,50 @@ function aiCaption(){
   'Creating impact one post at a time 🚀',
   'Visual storytelling that connects 🎯'
  ];
- document.getElementById('caption').value=
-  captions[Math.floor(Math.random()*captions.length)];
+ caption.value=captions[Math.floor(Math.random()*4)];
 }
 
 // SAVE POST
 function schedulePost(){
+
  const caption=document.getElementById('caption').value;
  const platform=document.getElementById('platform').value;
  const time=document.getElementById('scheduleTime').value;
+ const igUser=document.getElementById('igUser').value;
+
  if(!caption||!time||fi.files.length===0){
   msg('Complete all fields');return;
  }
+
  const posts=JSON.parse(localStorage.posts||'[]');
  const images=[...fi.files].map(f=>URL.createObjectURL(f));
- posts.push({id:Date.now(),caption,platform,time,images,posted:false});
+
+ posts.push({
+  id:Date.now(),
+  caption,
+  platform,
+  time,
+  images,
+  igUser,
+  posted:false,
+  apiReady:false
+ });
+
  localStorage.posts=JSON.stringify(posts);
- msg('Scheduled ✅');
- fi.value='';preview.innerHTML='';loadPosts();renderCalendar();
+
+ msg(platform==="Instagram"
+  ? 'Scheduled (IG API required)'
+  : 'Scheduled ✅'
+ );
+
+ fi.value='';
+ preview.innerHTML='';
+ loadPosts();
+ renderCalendar();
 }
 
-function msg(t){document.getElementById('msg').innerText=t;}
-
-// DELETE / EDIT
-function deletePost(id){
- let posts=JSON.parse(localStorage.posts||'[]');
- posts=posts.filter(p=>p.id!==id);
- localStorage.posts=JSON.stringify(posts);
- loadPosts();renderCalendar();
-}
-
-function editPost(id){
- const posts=JSON.parse(localStorage.posts||'[]');
- const p=posts.find(x=>x.id===id);
- document.getElementById('caption').value=p.caption;
- document.getElementById('platform').value=p.platform;
- document.getElementById('scheduleTime').value=p.time;
- deletePost(id);
+function msg(t){
+ document.getElementById('msg').innerText=t;
 }
 
 // LOAD POSTS
@@ -226,19 +248,46 @@ function loadPosts(){
  const posts=JSON.parse(localStorage.posts||'[]');
  const c=document.getElementById('posts');
  c.innerHTML='';
+
  posts.forEach(p=>{
   const d=document.createElement('div');
   d.className='post';
+
   d.innerHTML=`
    <b>${p.platform}</b> — ${p.time}<br/>
    ${p.caption}<br/>
+
+   ${p.platform==="Instagram" && p.igUser
+     ? `<a href="https://instagram.com/${p.igUser}" target="_blank">
+          View IG Profile
+        </a><br/>`
+     : ""
+   }
+
    ${p.images.map(i=>`<img src="${i}" height="50"/>`).join('')}
+
+   ${
+     p.platform==="Instagram"
+     ? `<br/><span style="color:#ff9800;font-size:12px;">
+          Awaiting API connection
+        </span>`
+     : ""
+   }
+
    <br/>
-   <button onclick="editPost(${p.id})">Edit</button>
    <button onclick="deletePost(${p.id})">Delete</button>
   `;
+
   c.appendChild(d);
  });
+}
+
+// DELETE
+function deletePost(id){
+ let posts=JSON.parse(localStorage.posts||'[]');
+ posts=posts.filter(p=>p.id!==id);
+ localStorage.posts=JSON.stringify(posts);
+ loadPosts();renderCalendar();
 }
 
 // CALENDAR
@@ -246,39 +295,31 @@ function renderCalendar(){
  const cal=document.getElementById('calendar');
  cal.innerHTML='';
  const posts=JSON.parse(localStorage.posts||'[]');
+
  for(let i=1;i<=30;i++){
   const day=document.createElement('div');
   day.className='day';
   day.innerHTML='<b>'+i+'</b>';
+
   posts.forEach(p=>{
    if(new Date(p.time).getDate()===i){
     day.innerHTML+='<br/>📌 '+p.platform;
    }
   });
+
   cal.appendChild(day);
  }
 }
 
-// AUTO POST SIMULATION
-setInterval(()=>{
- const posts=JSON.parse(localStorage.posts||'[]');
- const now=new Date();
- posts.forEach(p=>{
-  if(!p.posted && new Date(p.time)<=now){
-   p.posted=true;
-   console.log('Auto-posted:',p.caption);
-  }
- });
- localStorage.posts=JSON.stringify(posts);
-},60000);
-
 // EXPORT CSV
 function exportCSV(){
  const posts=JSON.parse(localStorage.posts||'[]');
- let csv='Platform,Caption,Time\n';
+ let csv='Platform,Caption,Time,IG Username\n';
+
  posts.forEach(p=>{
-  csv+=`${p.platform},"${p.caption}",${p.time}\n`;
+  csv+=`${p.platform},"${p.caption}",${p.time},${p.igUser}\n`;
  });
+
  const blob=new Blob([csv]);
  const a=document.createElement('a');
  a.href=URL.createObjectURL(blob);
@@ -286,7 +327,8 @@ function exportCSV(){
  a.click();
 }
 
-loadPosts();renderCalendar();
+loadPosts();
+renderCalendar();
 
 </script>
 
